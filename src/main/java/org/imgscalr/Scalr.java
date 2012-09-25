@@ -455,7 +455,13 @@ public class Scalr {
 		 * dimensions for the resultant image that best-fit within the given
 		 * height, regardless of the orientation of the image.
 		 */
-		FIT_TO_HEIGHT;
+		FIT_TO_HEIGHT,
+        /**
+         * Used to indicate that the scaling implementation should calculate
+         * dimensions for the resultant image that best-fit within the given
+         * height and width, and then crop it to fit within the bounding box.
+         */
+        CROP;
 	}
 
 	/**
@@ -1606,10 +1612,9 @@ public class Scalr {
 		 * within and it will do the right thing without mangling the result.
 		 */
 		if (resizeMode != Mode.FIT_EXACT) {
-			if ((ratio <= 1 && resizeMode == Mode.AUTOMATIC)
-					|| (resizeMode == Mode.FIT_TO_WIDTH)) {
+			if ((ratio <= 1 && resizeMode == Mode.AUTOMATIC) || (resizeMode == Mode.FIT_TO_WIDTH)) {
 				// First make sure we need to do any work in the first place
-				if (targetWidth == src.getWidth())
+				if (targetWidth == currentWidth)
 					return src;
 
 				// Save for detailed logging (this is cheap).
@@ -1626,9 +1631,33 @@ public class Scalr {
 					log(1,
 							"Auto-Corrected targetHeight [from=%d to=%d] to honor image proportions.",
 							originalTargetHeight, targetHeight);
-			} else {
+			} else if (resizeMode == Mode.CROP) {
+                // If already right size return
+                if (targetWidth == currentWidth && targetHeight == currentHeight)
+                    return src;
+
+                int originalTargetWidth = targetWidth;
+                int originalTargetHeight = targetHeight;
+
+                // Calculate ratio that will fit within the targetWidth and height
+                ratio = Math.max((float)targetWidth / currentWidth, (float)targetHeight / currentHeight);
+
+                targetWidth  = Math.round((float)currentWidth * ratio);
+                targetHeight = Math.round((float)currentHeight * ratio);
+
+                // Calculate the offset for the crop
+                int xOffset = (int)((targetWidth - originalTargetWidth) / 2D);
+                int yOffset = (int)((targetHeight - originalTargetHeight) / 2D);
+
+                // If the calculated size is bigger than what was sent in, return what was sent in instead.
+                targetWidth = (int)Math.ceil(targetWidth > originalTargetWidth ? originalTargetWidth : targetWidth);
+                targetHeight = (int)Math.ceil(targetHeight > originalTargetHeight ? originalTargetHeight : targetHeight);
+
+               // Crop to fit within the target height and width
+                src = crop(src, xOffset, yOffset, targetWidth, targetHeight);
+            } else {
 				// First make sure we need to do any work in the first place
-				if (targetHeight == src.getHeight())
+				if (targetHeight == currentHeight)
 					return src;
 
 				// Save for detailed logging (this is cheap).

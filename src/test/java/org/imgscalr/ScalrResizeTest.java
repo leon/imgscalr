@@ -159,4 +159,22 @@ public class ScalrResizeTest extends AbstractScalrTest {
 		Assert.assertEquals(i2.getWidth(), 500);
 		Assert.assertEquals(i2.getHeight(), 250);
 	}
+
+    @Test
+    public void testResizeCropLandscape() {
+        BufferedImage i = new BufferedImage(500, 250, BufferedImage.TYPE_INT_RGB);
+        BufferedImage i2 = Scalr.resize(i, Mode.CROP, 200, 200);
+
+        Assert.assertEquals(i2.getWidth(), 200);
+        Assert.assertEquals(i2.getHeight(), 200);
+    }
+
+    @Test
+    public void testResizeCropPortrait() {
+        BufferedImage i = new BufferedImage(250, 500, BufferedImage.TYPE_INT_RGB);
+        BufferedImage i2 = Scalr.resize(i, Mode.CROP, 200, 200);
+
+        Assert.assertEquals(i2.getWidth(), 200);
+        Assert.assertEquals(i2.getHeight(), 200);
+    }
 }
